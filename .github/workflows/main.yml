@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: "0 */6 * * *"
 
+# Release mein audio upload karne ke liye write permission chahiye
+permissions:
+  contents: write
+
 concurrency:
   group: audio-bot
   cancel-in-progress: false
@@ -33,4 +37,8 @@ jobs:
           API_HASH: ${{ secrets.API_HASH }}
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           OWNER_ID: ${{ secrets.OWNER_ID }}
+          GH_TOKEN: ${{ github.token }}
+          FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_CREDENTIALS }}
+          FIREBASE_DB_URL: ${{ secrets.FIREBASE_DB_URL }}
+          QUALITIES: "1080p,720p,480p"
         run: python bot.py
