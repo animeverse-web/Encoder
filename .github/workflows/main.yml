@@ -26,7 +26,7 @@ jobs:
           cache: pip
 
       - name: Install ffmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg aria2
 
       - name: Install dependencies
         run: pip install -r requirements.txt
@@ -41,4 +41,5 @@ jobs:
           FIREBASE_CREDENTIALS: ${{ secrets.FIREBASE_CREDENTIALS }}
           FIREBASE_DB_URL: ${{ secrets.FIREBASE_DB_URL }}
           QUALITIES: "1080p,720p,480p"
+          SEND_TO_TELEGRAM: "0"
         run: python bot.py
