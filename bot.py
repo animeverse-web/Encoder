@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import base64
 import time
 import shutil
 import asyncio
@@ -29,15 +30,21 @@ GH_REPO = os.environ.get("GITHUB_REPOSITORY", "").strip()
 GH_ENABLED = bool(GH_REPO and os.environ.get("GH_TOKEN"))
 MAX_ASSETS_PER_RELEASE = 900  # GitHub limit 1000 hai, thoda margin rakha
 
-# Audio Telegram par bhi bhejna hai? Nahi chahiye to workflow mein SEND_TO_TELEGRAM=0 kar do
-SEND_TO_TELEGRAM = os.environ.get("SEND_TO_TELEGRAM", "1") == "1"
+# Audio Telegram par wapas bhejna? Default band (slow hota hai). Chahiye to workflow mein SEND_TO_TELEGRAM=1 karo
+SEND_TO_TELEGRAM = os.environ.get("SEND_TO_TELEGRAM", "0") == "1"
 
 # Inhi saari qualities mein same audio tracks Firebase mein daale jayenge
 QUALITIES = [
     q.strip() for q in os.environ.get("QUALITIES", "1080p,720p,480p").split(",") if q.strip()
 ]
 
-FB_ROOT = "audio_tracks"  # Firebase mein top-level node
+FB_ROOT = "audio_tracks"  # Firebase mein top-level node (audio)
+FB_SUB_ROOT = "subtitles"  # Firebase mein top-level node (subtitles)
+SUB_DIR = "subs"           # repo ka folder jahan .vtt files commit hoti hain
+
+# Sirf text wale subtitle .vtt mein badle ja sakte hain (image wale PGS/DVD nahi)
+TEXT_SUB_CODECS = {"subrip", "srt", "ass", "ssa", "webvtt", "mov_text", "text"}
+SUB_EXTS = (".srt", ".ass", ".ssa", ".vtt")
 
 app = Client(
     "audio_extractor",
@@ -177,6 +184,50 @@ def build_track(url, stream, is_default):
     }
 
 
+BY_SHORT = {short: (raw, short, name) for raw, (short, name) in LANGS.items()}
+LANG_WORDS = {name.lower(): (raw, short, name) for raw, (short, name) in LANGS.items()}
+
+
+def detect_lang(*texts):
+    """Caption / file ke naam se language pakdo: 'Hindi', 'hin', 'hi', 'english'... Nahi mili to und."""
+    for text in texts:
+        for tok in re.findall(r"[a-z]+", (text or "").lower()):
+            if tok in LANG_WORDS:
+                return LANG_WORDS[tok]
+            if tok in LANGS:
+                short, name = LANGS[tok]
+                return tok, short, name
+            if tok in BY_SHORT:
+                return BY_SHORT[tok]
+    return "und", "und", "Subtitle"
+
+
+def safe_key(v):
+    """Firebase key / file naam ke liye safe (sirf a-z0-9)."""
+    return re.sub(r"[^a-z0-9]", "", str(v).lower()) or "und"
+
+
+async def get_subtitle_streams(path):
+    code, out, _ = await run(
+        "ffprobe", "-v", "quiet", "-print_format", "json",
+        "-select_streams", "s", "-show_streams", path,
+    )
+    if code != 0:
+        return []
+    return json.loads(out).get("streams", [])
+
+
+def read_text_utf8(path):
+    """Subtitle file ko UTF-8 text mein padho (utf-8 / utf-16 / cp1252 sab chalega)."""
+    raw = open(path, "rb").read()
+    for enc in ("utf-8-sig", "utf-16", "cp1252"):
+        try:
+            return raw.decode(enc)
+        except Exception:
+            continue
+    return raw.decode("utf-8", errors="replace")
+
+
 # ----------------------------------------------------------- Firebase
 def init_firebase():
     cred = credentials.Certificate(json.loads(need("FIREBASE_CREDENTIALS")))
@@ -191,6 +242,13 @@ def fb_save_tracks(slug, season, episode, qualities, tracks):
         db.reference(path).set(tracks)  # list -> keys 0, 1, 2 ...
         paths.append(path)
     return paths
+
+
+def fb_save_subtitles(slug, season, episode, subs):
+    """subtitles/{slug}/S{n}/E{n}/{lang} = {url, label, lang, format}. Same lang dobara aaye to replace."""
+    path = f"{FB_SUB_ROOT}/{slug}/S{season}/E{episode}"
+    db.reference(path).update(subs)
+    return path
 
 
 # ----------------------------------------------------- GitHub Releases
@@ -228,6 +286,45 @@ async def upload_to_github(file_path):
     return f"https://github.com/{GH_REPO}/releases/download/{tag}/{name}"
 
 
+_branch = {}
+
+
+async def default_branch():
+    if "name" not in _branch:
+        code, out, err = await run("gh", "api", f"repos/{GH_REPO}", "--jq", ".default_branch")
+        if code != 0:
+            raise RuntimeError(f"Repo ka branch nahi mila: {err.decode().strip()}")
+        _branch["name"] = out.decode().strip()
+    return _branch["name"]
+
+
+async def commit_to_repo(local_path, repo_path, message):
+    """File ko repo mein commit karo aur raw.githubusercontent.com ka link do.
+    (Release ke links par CORS header nahi hota, raw par hota hai — website ko subtitle padhne ke liye chahiye.)"""
+    branch = await default_branch()
+    api = f"repos/{GH_REPO}/contents/{repo_path}"
+    body = {
+        "message": message,
+        "branch": branch,
+        "content": base64.b64encode(open(local_path, "rb").read()).decode(),
+    }
+    code, out, _ = await run("gh", "api", f"{api}?ref={branch}", "--jq", ".sha")
+    if code == 0 and out.strip():
+        body["sha"] = out.decode().strip()  # file pehle se hai -> update
+    body_path = local_path + ".json"
+    with open(body_path, "w") as f:
+        json.dump(body, f)
+    code, _, err = await run("gh", "api", "--method", "PUT", api, "--input", body_path)
+    if code != 0:
+        raise RuntimeError(f"Repo mein commit fail: {err.decode().strip()[:200]}")
+    return f"https://raw.githubusercontent.com/{GH_REPO}/{branch}/{repo_path}"
+
+
+async def commit_subtitle(vtt_path, slug, season, episode, key):
+    repo_path = f"{SUB_DIR}/{slug}/S{season}E{episode}_{key}.vtt"
+    return await commit_to_repo(vtt_path, repo_path, f"subtitle: {slug} S{season}E{episode} {key}")
+
+
 # --------------------------------------------------------------- handlers
 @app.on_message(filters.command("start") & only_owner)
 async def start(client, message):
@@ -235,8 +332,12 @@ async def start(client, message):
         "👋 **Audio Extractor**\n\n"
         "1️⃣ `/setup anime-slug season`\n"
         "    jaise: `/setup naruto-shippuden 6`\n"
-        "2️⃣ Phir ek video bhejo. Caption mein `Episode 1` ya `Ep 1` likha ho.\n\n"
+        "2️⃣ Phir ya to video bhejo (caption mein `Episode 1`), ya **direct link** bhejo:\n"
+        "    `https://.../video.mkv Episode 1`\n"
+        "    (link se download Telegram se kaafi tez hota hai)\n\n"
         f"Audio tracks in qualities mein save honge: {', '.join(QUALITIES)}\n"
+        "💬 **Subtitle file** (.srt/.ass/.vtt) bhi bhej sakte ho — caption mein `Ep 1 Hindi` likho.\n"
+        "Video mein subtitle hon to wo bhi apne aap nikal jaate hain.\n\n"
         "`/cancel` se setup hata sakte ho."
     )
 
@@ -271,21 +372,81 @@ async def cancel(client, message):
     await message.reply("🗑 Setup hata diya.")
 
 
-@app.on_message((filters.video | filters.document) & only_owner)
-async def handle(client, message):
-    uid = message.from_user.id
-    cfg = SETUPS.get(uid)
+URL_RE = re.compile(r"https?://\S+")
+UA = "Mozilla/5.0"
+
+
+async def url_size(url):
+    """Link ki file ka size (HEAD request se). Nahi mila to 0."""
+    _, out, _ = await run("curl", "-sIL", "-A", UA, "--max-time", "20", url)
+    sizes = re.findall(rb"(?i)content-length:\s*(\d+)", out)
+    return int(sizes[-1]) if sizes else 0
+
+
+async def download_url(url, workdir, status):
+    """Direct link se download. aria2c (16 connections) ho to wo, nahi to curl."""
+    path = os.path.join(workdir, "input")
+    logp = os.path.join(workdir, "dl.log")
+    total = await url_size(url)
+
+    if shutil.which("aria2c"):
+        cmd = ["aria2c", "-x16", "-s16", "-k1M", "--file-allocation=none",
+               "--allow-overwrite=true", "--summary-interval=0",
+               "--console-log-level=error", f"--user-agent={UA}",
+               "-d", workdir, "-o", "input", url]
+    else:
+        cmd = ["curl", "-L", "--fail", "-A", UA, "-o", path, url]
+
+    start = time.time()
+    state = {"last": 0}
+    with open(logp, "wb") as log:
+        proc = await asyncio.create_subprocess_exec(*cmd, stdout=log, stderr=log)
+        while proc.returncode is None:
+            try:
+                await asyncio.wait_for(proc.wait(), timeout=UPDATE_EVERY)
+            except asyncio.TimeoutError:
+                pass
+            if os.path.exists(path):
+                # st_blocks = asli disk par likha hua data (multi-connection mein bhi sahi)
+                cur = os.stat(path).st_blocks * 512
+                if total:
+                    cur = min(cur, total)
+                await progress_cb(cur, total or cur, status, "📥 Downloading",
+                                  "Direct link se download ho raha hai", start, state)
+
+    if proc.returncode != 0 or not os.path.exists(path):
+        try:
+            lines = open(logp, errors="ignore").read().replace("\r", "\n").splitlines()
+            errs = [l.strip() for l in lines if "rror" in l or "curl:" in l]
+            tail = errs[-1][:200] if errs else ""
+        except Exception:
+            tail = ""
+        raise RuntimeError(f"Link se download nahi hua. {tail}".strip())
+    return path
+
+
+async def fetch_telegram(message, workdir, status):
+    start = time.time()
+    return await message.download(
+        file_name=os.path.join(workdir, "input"),
+        progress=progress_cb,
+        progress_args=(status, "📥 Downloading", "Video download ho raha hai",
+                       start, {"last": 0}),
+    )
+
+
+async def get_cfg(message):
+    cfg = SETUPS.get(message.from_user.id)
     if not cfg:
-        return await message.reply(
+        await message.reply(
             "⚠️ Pehle setup karo:\n`/setup anime-slug season`\nJaise: `/setup naruto-shippuden 6`"
         )
+    return cfg
 
-    episode = episode_from_caption(message.caption)
-    if episode is None:
-        return await message.reply(
-            "⚠️ Caption mein episode number nahi mila.\n"
-            "Caption mein `Episode 1` ya `Ep 1` likh kar video dobara bhejo."
-        )
+
+async def process(message, cfg, episode, fetch):
+    """Download -> audio nikalo -> GitHub -> Firebase. `fetch` file ko workdir mein laata hai."""
+    uid = message.from_user.id
     if not GH_ENABLED:
         return await message.reply("❌ GitHub token/repo nahi mila. Bot ko GitHub Actions mein chalao.")
 
@@ -299,13 +460,7 @@ async def handle(client, message):
 
     try:
         # ---- 1. Download
-        start = time.time()
-        path = await message.download(
-            file_name=os.path.join(workdir, "input"),
-            progress=progress_cb,
-            progress_args=(status, "📥 Downloading", "Video download ho raha hai",
-                           start, {"last": 0}),
-        )
+        path = await fetch(workdir, status)
 
         # ---- 2. Analyze
         await status.edit("🔍 **Analyzing**\nAudio tracks check ho rahe hain...")
@@ -346,7 +501,7 @@ async def handle(client, message):
                 continue
             tracks.append(build_track(url, s, n == default_idx))
 
-            # ---- 5. Telegram (optional)
+            # ---- 5. Telegram (optional, default band)
             if SEND_TO_TELEGRAM:
                 up_start = time.time()
                 await message.reply_document(
@@ -361,31 +516,162 @@ async def handle(client, message):
         if not tracks:
             raise RuntimeError("Koi bhi track GitHub par upload nahi ho paya.")
 
-        # ---- 6. Firebase (har quality mein same tracks)
+        # ---- 6. Subtitles (text wale -> .vtt), koi bhi fail ho to baaki chalte rehte hain
+        subs, skipped = {}, 0
+        sub_streams = await get_subtitle_streams(path)
+        for n, s in enumerate(sub_streams):
+            codec = s.get("codec_name", "")
+            if codec not in TEXT_SUB_CODECS:
+                skipped += 1  # image wale (PGS/DVD) text nahi ban sakte
+                continue
+            _, short, name = lang_info(s)
+            base = safe_key(short)
+            key, i = base, 2
+            while key in subs:
+                key, i = f"{base}{i}", i + 1
+            title = s.get("tags", {}).get("title", "").strip()
+            label = name if key == base else (title or f"{name} {i - 1}")
+            await status.edit(f"💬 **Subtitle** {n + 1}/{len(sub_streams)}\n{label} nikaal raha hoon...")
+            vtt = os.path.join(workdir, f"{key}.vtt")
+            code, _, _ = await run("ffmpeg", "-y", "-i", path, "-map", f"0:s:{n}", "-c:s", "webvtt", vtt)
+            if code != 0 or not os.path.exists(vtt):
+                await message.reply(f"⚠️ Subtitle {label}convert nahi hua.")
+                continue
+            try:
+                url = await commit_subtitle(vtt, slug, season, episode, safe_key(key))
+            except Exception as e:
+                await message.reply(f"⚠️ Subtitle {label} save nahi hua: {e}")
+                continue
+            subs[safe_key(key)] = {"url": url, "label": label, "lang": short, "format": "vtt"}
+ 
+        # ---- 7. Firebase (audio har quality mein, subtitle episode ke neeche)
         await status.edit("🔥 **Firebase**\nData save ho raha hai...")
         await asyncio.to_thread(fb_save_tracks, slug, season, episode, QUALITIES, tracks)
-
+        if subs:
+            await asyncio.to_thread(fb_save_subtitles, slug, season, episode, subs)
+ 
         ok = True
         await status.edit(
             f"✅ **Done!**\n"
             f"`{slug}` • S{season} E{episode}\n"
             f"🎧 {len(tracks)}/{total_tracks} track save hue\n"
-            f"🔥 Qualities: {', '.join(QUALITIES)}\n"
+            + (f"💬 {len(subs)} subtitle save hue" + (f" ({skipped} image-wale chhode)" if skipped else "") + "\n"
+               if subs or skipped else "")
+            + f"🔥 Qualities: {', '.join(QUALITIES)}\n"
             f"📁 `{FB_ROOT}/{slug}/S{season}/E{episode}/<quality>/tracks`\n"
             f"⏱ Total time: {human_time(time.time() - t0)}"
         )
-
+ 
     except Exception as e:
         try:
-            await status.edit(f"❌ Error: {e}\n\nSetup wapas laga diya hai, video dobara bhej sakte ho.")
+            await status.edit(f"❌ Error: {e}\n\nSetup wapas laga diya hai, dobara bhej sakte ho.")
         except Exception:
             pass
     finally:
         if not ok:
             SETUPS[uid] = cfg  # fail hua to dobara /setup nahi karna padega
         shutil.rmtree(workdir, ignore_errors=True)
-
-
+ 
+ 
+def _is_sub_doc(_, __, m):
+    d = m.document
+    return bool(d and d.file_name and d.file_name.lower().endswith(SUB_EXTS))
+ 
+ 
+sub_doc_filter = filters.create(_is_sub_doc)
+ 
+ 
+@app.on_message(filters.document & sub_doc_filter & only_owner)
+async def handle_sub_file(client, message):
+    """Seedhi subtitle file (.srt/.ass/.vtt) -> .vtt -> repo -> Firebase. Setup ussi chalu rehta hai."""
+    cfg = await get_cfg(message)
+    if not cfg:
+        return
+    fname = message.document.file_name
+    episode = episode_from_caption(message.caption)
+    if episode is None:
+        episode = episode_from_caption(fname)
+    if episode is None:
+        return await message.reply(
+            "⚠️ Episode number nahi mila.\nCaption mein likho: `Ep 1 Hindi`"
+        )
+    if not GH_ENABLED:
+        return await message.reply("❌ GitHub token/repo nahi mila. Bot ko GitHub Actions mein chalao.")
+ 
+    slug, season = cfg["slug"], cfg["season"]
+    raw3, short, name = detect_lang(message.caption, fname)
+    key = safe_key(short)
+    workdir = tempfile.mkdtemp(prefix="subbot_")
+    status = await message.reply(f"💬 `{slug}` S{season} E{episode} • {name} subtitle...")
+    try:
+        ext = os.path.splitext(fname)[1].lower()
+        src = os.path.join(workdir, "in" + ext)
+        await message.download(file_name=src)
+ 
+        # UTF-8 mein badlo (Hindi/Unicode wali files ke liye zaroori)
+        text = read_text_utf8(src)
+        with open(src, "w", encoding="utf-8") as f:
+            f.write(text)
+ 
+        vtt = os.path.join(workdir, f"{key}.vtt")
+        if ext == ".vtt" and text.lstrip().startswith("WEBVTT"):
+            shutil.copy(src, vtt)
+        else:
+            code, _, _ = await run("ffmpeg", "-y", "-i", src, "-c:s", "webvtt", vtt)
+            if code != 0 or not os.path.exists(vtt):
+                raise RuntimeError("Subtitle file convert nahi hui (format sahi hai?).")
+ 
+        url = await commit_subtitle(vtt, slug, season, episode, key)
+        entry = {"url": url, "label": name, "lang": short, "format": "vtt"}
+        path = await asyncio.to_thread(fb_save_subtitles, slug, season, episode, {key: entry})
+        await status.edit(
+            f"✅ **Subtitle save ho gaya**\n"
+            f"`{slug}` • S{season} E{episode} • {name} (`{short}`)\n"
+            f"📁 `{path}/{key}`\n\n"
+            f"Setup abhi chalu hai — aur subtitle ya video bhej sakte ho."
+        )
+    except Exception as e:
+        try:
+            await status.edit(f"❌ Error: {e}")
+        except Exception:
+            pass
+    finally:
+        shutil.rmtree(workdir, ignore_errors=True)
+ 
+ 
+@app.on_message((filters.video | filters.document) & only_owner)
+async def handle_media(client, message):
+    cfg = await get_cfg(message)
+    if not cfg:
+        return
+    episode = episode_from_caption(message.caption)
+    if episode is None:
+        return await message.reply(
+            "⚠️ Caption mein episode number nahi mila.\n"
+            "Caption mein `Episode 1` ya `Ep 1` likh kar video dobara bhejo."
+        )
+    await process(message, cfg, episode, lambda wd, st: fetch_telegram(message, wd, st))
+ 
+ 
+@app.on_message(
+    filters.text & filters.regex(r"https?://\S+")
+    & ~filters.command(["start", "setup", "cancel"]) & only_owner
+)
+async def handle_link(client, message):
+    cfg = await get_cfg(message)
+    if not cfg:
+        return
+    url = URL_RE.search(message.text).group(0)
+    episode = episode_from_caption(URL_RE.sub(" ", message.text))  # pehle link ke bahar ka text
+    if episode is None:
+        episode = episode_from_caption(url)                          # nahi mila to link ke andar dekho
+    if episode is None:
+        return await message.reply(
+            "⚠️ Episode number nahi mila.\nAise bhejo: `https://.../video.mkv Episode 1`"
+        )
+    await process(message, cfg, episode, lambda wd, st: download_url(url, wd, st))
+ 
+ 
 if __name__ == "__main__":
     init_firebase()
     app.run()
