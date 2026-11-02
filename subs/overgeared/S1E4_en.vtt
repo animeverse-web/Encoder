@@ -1,0 +1,441 @@
+WEBVTT
+
+01:04.807 --> 01:08.037
+<b>Overgeared</b>
+
+02:36.987 --> 02:39.847
+<b>Unable to analyze target's skills!</b>
+
+03:31.757 --> 03:33.857
+<b>High-Ranked Blacksmith Skill</b>
+
+03:36.867 --> 03:37.597
+<b>High-Ranked Blacksmith Skill</b>
+
+03:50.527 --> 03:52.277
+<b>Blessed Blacksmith's Hammer</b>
+
+05:29.717 --> 05:32.687
+<b>Dagger of Temptation</b>
+
+05:29.717 --> 05:32.687
+<b></b>Class: Epic
+
+05:29.717 --> 05:32.687
+<b></b>m 0 0 l 105 0 105 5 0 5
+
+05:29.717 --> 05:32.687
+<b></b>Durability
+
+05:29.717 --> 05:32.687
+<b></b>m 0 0 l 50 0 50 6 0 6
+
+05:29.717 --> 05:32.687
+<b></b>Attack
+
+05:29.717 --> 05:32.687
+<b></b>m 0 0 l 50 0 50 7 0 7
+
+05:29.717 --> 05:32.687
+<b></b>* Attack Speed
+
+05:29.717 --> 05:32.687
+<b></b>m 0 0 l 50 0 50 5 0 5
+
+05:29.717 --> 05:32.687
+<b></b>* Chance to charm an enemy
+
+05:29.717 --> 05:32.687
+<b></b>* If attack is blocked, durability will decrease faster
+
+05:29.717 --> 05:32.687
+<b></b>m 0 0 l 325 0 325 22 0 22
+
+05:29.717 --> 05:32.687
+<b></b>Equip Conditions: Level 100, Agility 200+, Intelligence 30+
+
+05:29.717 --> 05:32.687
+<b></b>Intermediate Dagger Mastery
+
+05:32.687 --> 05:33.687
+<b>Dagger of Temptation</b>
+
+07:18.857 --> 07:21.197
+<b></b>Quest
+
+07:18.857 --> 07:21.197
+<b>Item Creation Match with the Mero Company</b>
+
+07:18.857 --> 07:21.197
+<b></b>The Mero Company has challenged you in a battle for the forge.
+
+07:18.857 --> 07:21.197
+<b>m 0 0 l 255 0 255 55 0 55</b>
+
+07:18.857 --> 07:21.197
+<b></b>Khan is in poor shape and has asked you to participate in his stead.
+
+07:18.857 --> 07:21.197
+<b></b>Clear Condition: Win the Mero Company's match
+
+07:18.857 --> 07:21.197
+<b></b>Clear Reward: 600 gold prize
+
+07:18.857 --> 07:21.197
+<b></b>+500 Fame in Winston
+
+07:18.857 --> 07:21.197
+<b></b>Failure: Fame in Winston becomes 1.
+
+07:18.857 --> 07:21.197
+<b></b>Khan loses his forge to the Mero Company.
+
+07:21.197 --> 07:23.137
+<b></b>Hidden Quest
+
+07:21.197 --> 07:23.137
+<b>Apostle of Justice</b>
+
+07:21.197 --> 07:23.137
+<b></b>You've been locked in an underground prison!
+
+07:21.197 --> 07:23.137
+<b>m 0 0 l 255 0 255 86 0 86</b>
+
+07:21.197 --> 07:23.137
+<b></b>Rescue Huroi, who is trapped on the lowest level,
+
+07:21.197 --> 07:23.137
+<b></b>and deliver justice to the villagers of Winston!
+
+07:21.197 --> 07:23.137
+<b></b>Clear Condition: Rescue Huroi within 7 hours
+
+07:21.197 --> 07:23.137
+<b></b>Clear Reward: Title "Apostle of Justice"
+
+07:21.197 --> 07:23.137
+<b></b>* Apostle of Justice: "Courage" stat is unlocked.
+
+07:21.197 --> 07:23.137
+<b></b>All stats +10.
+
+07:21.197 --> 07:23.137
+<b></b>Skill "Unyielding Justice" earned.
+
+07:21.197 --> 07:23.137
+<b></b>Failure: Level -2
+
+07:21.197 --> 07:23.137
+<b></b>Title "Coward"
+
+07:21.197 --> 07:23.137
+<b></b>*Coward: Reputation with NPCs decreases.
+
+07:21.197 --> 07:23.137
+<b></b>Chance of new quests decreases.
+
+07:21.197 --> 07:23.137
+<b></b>NPCs with a strong sense of justice will dislike you.
+
+07:25.387 --> 07:31.387
+<b></b>Hidden Quest
+<b>Apostle of Justice (S)
+
+</b>You've been locked in an underground prison!
+Rescue Huroi, who is trapped on the lowest level,
+and deliver justice to the villagers of Winston!
+
+Clear Condition: Rescue Huroi within 7 hours
+Clear Reward: Title "Apostle of Justice"
+* Apostle of Justice: "Courage" stat is unlocked.
+All stats +10.
+Skill "Unyielding Justice" earned.
+
+Failure: Level -2
+Title "Coward"
+*Coward: Reputation with NPCs decreases.
+Chance of new quests decreases.
+NPCs with a strong sense of justice will dislike you.
+
+07:25.387 --> 07:31.387
+<b>m 0 0 l 200 0 200 71 0 71</b>
+
+07:32.437 --> 07:33.867
+<b>m 0 0 l 200 0 200 56 0 56</b>
+
+07:32.437 --> 07:33.867
+<b></b>You have abandoned the Mero Company's quest
+ to persuade the villagers and promised to go to the
+capital "Frontier" to tell Earl Steim of their misdeeds!
+
+Clear Condition: Fend off the company's
+attacks and meet with Earl Steim
+ Clear Reward: Title "Apostle of Justice"
+* Apostle of Justice: "Courage" stat is unlocked.
+All stats +10.
+Skill "Unyielding Justice" earned.
+
+Failure: Be caught by the Mero Company.
+Level -1
+ Banned from Winston until a new lord takes over.
+
+07:33.957 --> 07:37.267
+<b>m 0 0 l 200 0 200 60 0 60</b>
+
+07:33.957 --> 07:37.267
+<b></b>You've been locked in an underground prison!
+Rescue Huroi, who is trapped on the lowest level,
+and deliver justice to the villagers of Winston!
+
+Clear Condition: Rescue Huroi within 7 hours
+Clear Reward: Title "Apostle of Justice"
+* Apostle of Justice: "Courage" stat is unlocked.
+All stats +10.
+Skill "Unyielding Justice" earned.
+
+Failure: Level -2
+Title "Coward"
+*Coward: Reputation with NPCs decreases.
+Chance of new quests decreases.
+NPCs with a strong sense of justice will dislike you.
+
+07:41.527 --> 07:52.287
+<b></b>Clear Condition: Rescue Huroi within 7 hours
+Clear Reward: Title "Apostle of Justice"
+* Apostle of Justice: "Courage" stat is unlocked.
+All stats +10.
+Skill "Unyielding Justice" earned.
+
+Failure: Level -2
+Title "Coward"
+*Coward: Reputation with NPCs decreases.
+Chance of new quests decreases.
+NPCs with a strong sense of justice will dislike you.
+
+07:41.527 --> 07:52.287
+<b>m 0 0 l 200 0 200 46 0 46</b>
+
+07:50.887 --> 07:52.287
+<b>This quest cannot be abandoned</b>
+
+08:32.807 --> 08:35.847
+<b>Title</b>
+
+08:32.807 --> 08:35.847
+<b>Player of Games</b>
+
+08:32.807 --> 08:35.847
+<b>Earned</b>
+
+09:23.047 --> 09:27.047
+<b></b>Quest
+
+09:23.047 --> 09:27.047
+<b><b>Waiting</b></b>
+
+09:23.047 --> 09:27.047
+<b><b>Time Remaining</b></b>
+
+10:17.017 --> 10:21.767
+<b></b>Quest
+
+10:17.017 --> 10:21.767
+<b><b>Apostle of Justice</b></b>
+
+10:17.017 --> 10:21.767
+<b><b>Time Remaining</b></b>
+
+10:55.507 --> 10:58.267
+Let me out of here!!
+
+11:02.397 --> 11:03.457
+Terms?
+
+11:03.877 --> 11:05.247
+What d'ya mean?
+
+11:07.837 --> 11:08.797
+Hmm?
+
+12:10.607 --> 12:15.887
+<b>Dagger of Ideals</b>
+
+12:10.817 --> 12:12.357
+<b></b>Your understanding of <b>Dagger of Ideals</b>
+has reached 100%
+
+12:11.107 --> 12:12.567
+<b><b>Dagger of Ideals</b>
+Attack -20%
+
+
+
+
+
+
+
+
+Conditional Effect -50%</b>
+
+12:12.737 --> 12:15.887
+<b>Skills</b>
+
+12:13.317 --> 12:13.427
+<b></b>Fast Reflexes
+
+12:13.397 --> 12:13.507
+<b></b>Blade Wind
+
+12:13.427 --> 12:15.887
+<b></b>Fast Reflexes
+
+12:13.507 --> 12:15.887
+<b></b>Blade Wind
+
+13:24.747 --> 13:25.997
+<b></b>Quest
+
+13:24.747 --> 13:25.997
+<b><b>Apostle of Justice</b></b>
+
+13:24.747 --> 13:25.997
+<b><b>Time Remaining</b></b>
+
+14:35.837 --> 14:37.987
+<b></b>Title<b>
+
+
+
+
+
+
+Knightslayer</b>
+
+14:36.337 --> 14:37.987
+<b></b>Obtained <b>Cell Key</b>
+
+14:47.097 --> 14:52.497
+<b>Grid</b>
+
+14:47.097 --> 14:52.497
+<b>Job</b>
+
+14:47.097 --> 14:52.497
+<b>Class</b>
+
+14:47.097 --> 14:52.497
+<b>Title</b>
+
+14:47.097 --> 14:52.497
+<b>Pagma's Successor</b>
+
+14:47.097 --> 14:52.497
+<b>Legendary</b>
+
+14:47.097 --> 14:52.497
+<b>Legendary One</b>
+
+14:47.097 --> 14:52.497
+<b>m 0 0 l 105 0 105 18 0 18</b>
+
+14:47.097 --> 14:52.497
+<b>m 0 0 l 75 0 75 48 0 48</b>
+
+14:47.097 --> 14:52.497
+<b>m 0 0 l 185 0 185 48 0 48</b>
+
+15:18.757 --> 15:19.507
+<b></b>Hidden Quest
+
+15:18.757 --> 15:19.507
+<b>Waiting</b>
+
+15:18.757 --> 15:19.507
+<b>The Mero Company has locked you
+in Winston Castle's underground prison.
+If you can endure your endless wait
+in the inescapable prison, the "Apostle of Justice"
+that you failed to become will save you!
+
+
+Clear Condition: Don't log out for
+8 days of in-game time
+*This is an extremely dangerous quest.
+Elderly players or players with health concerns,
+please abandon the quest.
+
+
+Clear Reward: Second job
+"Partner of the Apostle of Justice"
+*Stat "Courage" unlocked
+All stats +20 when with the Apostle of Justice
+Skills "Unyielding Justice" + "Sacrifice for Justice"
+Title "He Who Has Surpassed a Trial"
+*Stat "Indomitability" unlocked
+Skill "Strong Will"
+
+
+Failure: No penalty</b>
+
+15:18.757 --> 15:19.507
+<b>m 0 0 l 320 0 320 108 0 108</b>
+
+15:19.757 --> 15:21.127
+<b></b>Hidden Quest
+
+15:19.757 --> 15:21.127
+<b><b>Waiting</b></b>
+
+15:19.757 --> 15:21.127
+<b></b>Quest Clear!
+You got the clear reward!
+
+15:21.247 --> 15:22.527
+<b></b>2nd Job
+<b>Partner of the Apostle of Justice</b>
+
+15:21.757 --> 15:22.527
+<b></b>Title
+<b>He Who Overcame a Trial</b>
+
+15:22.527 --> 15:29.537
+<b></b>2nd Job
+<b>Partner of the Apostle of Justice</b>
+
+15:22.527 --> 15:29.537
+<b>m 0 0 l 150 0 150 11 0 11</b>
+
+15:22.527 --> 15:29.537
+<b></b>Title
+<b>He Who Overcame a Trial</b>
+
+15:22.527 --> 15:29.537
+<b>m 0 0 l 150 0 150 11 0 11</b>
+
+17:00.207 --> 17:04.587
+<b>Skills</b>
+
+17:00.207 --> 17:04.587
+<b></b>Indomitable Will
+
+17:00.207 --> 17:04.587
+<b></b>Unyielding Justice
+
+17:00.207 --> 17:04.587
+<b></b>Sacrifice for Justice
+
+17:01.317 --> 17:04.587
+<b>Indomitable Will</b>
+
+17:01.317 --> 17:04.587
+<b></b>* Neutralize any single attack for ten seconds.
+
+20:16.737 --> 20:20.747
+<b>Huroi</b>
+
+20:31.877 --> 20:36.887
+<b>Grid</b>
+
+20:51.147 --> 20:58.907
+<i>Satisfy'</i>s first holder of a second job!
